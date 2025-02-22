@@ -16,6 +16,8 @@ GameObject:
   - component: {fileID: 6556512745671593140}
   - component: {fileID: 3908098096473378228}
   - component: {fileID: 6202435067779624046}
+  - component: {fileID: 2911120856247372044}
+  - component: {fileID: 743210984308920081}
   m_Layer: 0
   m_Name: pfUnit
   m_TagString: Untagged
@@ -52,6 +54,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4ba8e5d30517b8445a21b8ed563410f4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  syncDirection: 0
+  syncMode: 0
+  syncInterval: 0
   pfUnitRagdoll: {fileID: 1428905617829286200, guid: 32d728fe6385fcd4c9f2c319a493cba5, type: 3}
   avatarRoot: {fileID: 1428905617990131990}
   skinnedMeshRenderer: {fileID: 2437878412286689208}
@@ -85,6 +90,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3032ba07fb46b4347abe3a41bccb56b0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  syncDirection: 0
+  syncMode: 0
+  syncInterval: 0
 --- !u!114 &3658056134856086174
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -97,6 +105,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e949e4e49431c854d9fd7b13bf8d56c7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  syncDirection: 0
+  syncMode: 0
+  syncInterval: 0
 --- !u!114 &6556512745671593140
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -109,6 +120,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0bbebc8d8e98de94f926612270ff61da, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  syncDirection: 0
+  syncMode: 0
+  syncInterval: 0
 --- !u!114 &3908098096473378228
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -121,6 +135,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9d26f2945e9056342a97da181a3ac6e4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  syncDirection: 0
+  syncMode: 0
+  syncInterval: 0
   pfGrenade: {fileID: 7337947327766652889, guid: fd50ceded03729c4ea84896be12f8bf7, type: 3}
   pfGrenadeExplosion: {fileID: 613433886817584985, guid: 8f11aa672ba1f864f9feb30ba062a6aa, type: 3}
   grenadeVerticalAnimationCurve:
@@ -159,6 +176,59 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0f4befe362367ed489f534f4e7eaee59, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  syncDirection: 0
+  syncMode: 0
+  syncInterval: 0
+--- !u!114 &2911120856247372044
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1428905617829286199}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9b91ecbcc199f4492b9a91e820070131, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  sceneId: 0
+  _assetId: 2355375294
+  serverOnly: 0
+  visibility: 0
+  hasSpawned: 0
+--- !u!114 &743210984308920081
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1428905617829286199}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8ff3ba0becae47b8b9381191598957c8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  syncDirection: 1
+  syncMode: 0
+  syncInterval: 0
+  target: {fileID: 1428905617829286200}
+  syncPosition: 1
+  syncRotation: 1
+  syncScale: 0
+  onlySyncOnChange: 1
+  compressRotation: 1
+  interpolatePosition: 1
+  interpolateRotation: 1
+  interpolateScale: 1
+  coordinateSpace: 0
+  timelineOffset: 1
+  showGizmos: 0
+  showOverlay: 0
+  overlayColor: {r: 0, g: 0, b: 0, a: 0.5}
+  onlySyncOnChangeCorrectionMultiplier: 2
+  rotationSensitivity: 0.01
+  positionPrecision: 0.01
+  scalePrecision: 0.01
 --- !u!1 &1428905617990131989
 GameObject:
   m_ObjectHideFlags: 0

@@ -13,11 +13,11 @@ public class Mouse3D : MonoBehaviour {
     }
 
     private void Update() {
-        Debug.Log(Camera.main.name);
+        //Debug.Log(Camera.main.name);
         Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
         if (Physics.Raycast(ray, out RaycastHit raycastHit, 999f, mouseColliderLayerMask)) {
             transform.position = raycastHit.point;
-            Debug.Log(raycastHit.point);
+            //Debug.Log(raycastHit.point);
         }
     }
 

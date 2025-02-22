@@ -1,10 +1,12 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using Mirror;
 using UnityEngine;
 
-public class Unit : MonoBehaviour {
+public class Unit : NetworkBehaviour {
 
+    
     private const int ACTION_POINTS_DEFAULT = 2;
 
     public static event EventHandler OnUnitSpawned;
@@ -28,6 +30,7 @@ public class Unit : MonoBehaviour {
     private IUnitAction[] unitActionArray; // All Unit Actions attached to this Unit
     private IUnitAction activeUnitAction; // Currently active action
     private Vector2Int gridPosition; // Grid Position where this Unit is on
+    [SyncVar]
     private int actionPoints;
     private HealthSystem healthSystem;
     private CoverType coverType;

@@ -1,9 +1,11 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using Mirror;
 using UnityEngine;
 
-public abstract class BaseAction : MonoBehaviour, IUnitAction {
+public abstract class BaseAction : NetworkBehaviour, IUnitAction
+{
 
     public abstract ActionType GetActionType();
 
@@ -18,7 +20,8 @@ public abstract class BaseAction : MonoBehaviour, IUnitAction {
     protected Action onActionComplete;
 
 
-    public void Setup(Unit unit) {
+    public void Setup(Unit unit)
+    {
         this.unit = unit;
         unit.GetHealthSystem().OnDead += Unit_OnDead;
     }
@@ -29,14 +32,18 @@ public abstract class BaseAction : MonoBehaviour, IUnitAction {
 
 
 
-    private void Unit_OnDead(object sender, EventArgs e) {
+    private void Unit_OnDead(object sender, EventArgs e)
+    {
         unit.GetHealthSystem().OnDead -= Unit_OnDead;
-        if (IsActive()) {
+        if (IsActive())
+        {
             ActionComplete();
         }
     }
 
-    protected void ActionStarted(Action onActionComplete) {
+
+    protected void ActionStarted(Action onActionComplete)
+    {
         this.onActionComplete = onActionComplete;
         unit.SetActiveUnitAction(this);
         isActive = true;
@@ -44,12 +51,20 @@ public abstract class BaseAction : MonoBehaviour, IUnitAction {
         OnActionStarted?.Invoke(this, EventArgs.Empty);
     }
 
-    protected void ActionComplete() {
+    protected void ActionComplete()
+    {
+        if (isServer) {
+        RpcActionComplete(); // Сервер говорит клиенту завершить действие
+    }
+    }
+    [ClientRpc]
+    private void RpcActionComplete()
+    {
         isActive = false;
         unit.UnitActionComplete(this);
-        onActionComplete();
-
+        onActionComplete?.Invoke();
         OnActionComplete?.Invoke(this, EventArgs.Empty);
     }
+
 
 }

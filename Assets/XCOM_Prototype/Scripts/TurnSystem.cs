@@ -1,9 +1,10 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using Mirror;
 using UnityEngine;
 
-public class TurnSystem : MonoBehaviour {
+public class TurnSystem : NetworkBehaviour {
 
     public static TurnSystem Instance { get; private set; }
 
@@ -29,7 +30,7 @@ public class TurnSystem : MonoBehaviour {
     public bool IsPlayerTurn() {
         return isPlayerTurn;
     }
-
+    [Command]
     public void NextTurn() {
         turnNumber++;
         isPlayerTurn = !isPlayerTurn;
