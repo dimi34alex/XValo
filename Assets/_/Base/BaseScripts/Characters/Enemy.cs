@@ -153,7 +153,7 @@ public class Enemy : MonoBehaviour {
         Blood_Handler.SpawnBlood(GetPosition(), bloodDir);
 
         int damageAmount = 30;
-        DamagePopup.Create(GetPosition(), damageAmount, false);
+        //DamagePopup.Create(GetPosition(), damageAmount, false);
         healthSystem.Damage(damageAmount);
         if (IsDead()) {
             FlyingBody.Create(GameAssetsOld.i.pfEnemyFlyingBody, GetPosition(), bloodDir);

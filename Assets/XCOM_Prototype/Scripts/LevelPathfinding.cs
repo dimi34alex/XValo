@@ -43,9 +43,10 @@ public class LevelPathfinding : MonoBehaviour {
 
     public List<Vector3> FindPath(Vector3 startPosition, Vector3 endPosition, out int pathLength) {
         List<Vector3> pathXY = pathfinding.FindPath(ConvertXZtoXY(startPosition), ConvertXZtoXY(endPosition), out pathLength);
-
+        
         if (pathXY == null) {
             // No path
+            Debug.LogError($"pathXY = {pathXY}, pathfinding = {pathfinding}");
             return null;
         }
 

@@ -59,9 +59,10 @@ namespace PathfindingXCOM {
         public List<PathNode> FindPath(int startX, int startY, int endX, int endY) {
             PathNode startNode = grid.GetGridObject(startX, startY);
             PathNode endNode = grid.GetGridObject(endX, endY);
-
+            
             if (startNode == null || endNode == null) {
                 // Invalid Path
+                Debug.LogError($"startNode == {startNode}, endNode == {endNode}");
                 return null;
             }
 

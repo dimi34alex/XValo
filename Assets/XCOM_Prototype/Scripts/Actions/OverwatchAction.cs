@@ -46,7 +46,7 @@ public class OverwatchAction : BaseAction {
     }
 
     private void TurnSystem_OnTurnChanged(object sender, EventArgs e) {
-        if (TurnSystem.Instance.IsPlayerTurn()) {
+        if (TurnSystem.Instance.IsPlayerTurn(unit.GetOwnedPlayerId())) {
             // Back into the Player's turn, stop Overwatching
             passiveActive = false;
         }

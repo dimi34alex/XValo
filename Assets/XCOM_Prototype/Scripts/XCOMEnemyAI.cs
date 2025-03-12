@@ -2,11 +2,14 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using Mirror;
 
-public class XCOMEnemyAI : MonoBehaviour {
+public class XCOMEnemyAI : MonoBehaviour
+{
+/*
 
-
-    private enum State {
+    private enum State
+    {
         WaitingForEnemyTurn,
         TakingTurn,
         Busy,
@@ -16,26 +19,39 @@ public class XCOMEnemyAI : MonoBehaviour {
     private State state;
     private float timer;
 
-    private void Awake() {
+    private void Awake()
+    {
         state = State.WaitingForEnemyTurn;
     }
 
-    private void Start() {
+    private void Start()
+    {
         TurnSystem.Instance.OnTurnChanged += TurnSystem_OnTurnChanged;
     }
 
-    private void Update() {
-        switch (state) {
+    private void Update()
+    {
+        if (NetworkServer.connections.Count > 1)
+        {
+            return; // Не выполняем код ИИ, если подключены 2 игрока
+        }
+
+        switch (state)
+        {
             case State.WaitingForEnemyTurn:
                 break;
             case State.TakingTurn:
                 timer -= Time.deltaTime;
-                if (timer <= 0f) {
-                    if (TryTakeEnemyAIAction(SetStateTakingTurn)) {
+                if (timer <= 0f)
+                {
+                    if (TryTakeEnemyAIAction(SetStateTakingTurn))
+                    {
                         state = State.Busy;
-                    } else {
+                    }
+                    else
+                    {
                         // No more enemies have actions they can take, end Enemy turn
-                        TurnSystem.Instance.NextTurn();
+                        TurnSystem.Instance.CmdNextTurn();
                     }
                 }
                 break;
@@ -45,26 +61,40 @@ public class XCOMEnemyAI : MonoBehaviour {
         }
     }
 
-    private void SetStateTakingTurn() {
+    private void SetStateTakingTurn()
+    {
         timer = .5f;
         state = State.TakingTurn;
     }
 
-    private void TurnSystem_OnTurnChanged(object sender, System.EventArgs e) {
-        if (!TurnSystem.Instance.IsPlayerTurn()) {
+    private void TurnSystem_OnTurnChanged(object sender, System.EventArgs e)
+    {
+        if (NetworkServer.connections.Count > 1)
+        {
+            Debug.Log("ИИ отключается, так как подключен второй игрок!");
+            return; // Если игра 1 на 1, ИИ не нужен
+        }
+        if (!TurnSystem.Instance.IsPlayerTurn())
+        {
             // Enemy turn
             timer = .5f;
             state = State.TakingTurn;
-        } else {
+        }
+        else
+        {
             state = State.WaitingForEnemyTurn;
         }
     }
 
-    private bool TryTakeEnemyAIAction(Action onEnemyAIActionComplete) {
+    private bool TryTakeEnemyAIAction(Action onEnemyAIActionComplete)
+    {
         List<Unit> enemyUnitList = UnitManager.Instance.GetEnemyUnitList();
-        foreach (Unit enemyUnit in enemyUnitList) {
-            if (enemyUnit.IsEnemyAIActive() && enemyUnit.GetActionPoints() > 0) {
-                if (TryTakeEnemyAIAction(enemyUnit, onEnemyAIActionComplete)) {
+        foreach (Unit enemyUnit in enemyUnitList)
+        {
+            if (enemyUnit.IsEnemyAIActive() && enemyUnit.GetActionPoints() > 0)
+            {
+                if (TryTakeEnemyAIAction(enemyUnit, onEnemyAIActionComplete))
+                {
                     //CameraManager.Instance.TeleportCamera(enemyUnit.GetPosition());
                     return true;
                 }
@@ -73,14 +103,17 @@ public class XCOMEnemyAI : MonoBehaviour {
         return false;
     }
 
-    private bool TryTakeEnemyAIAction(Unit enemyUnit, Action onEnemyAIActionComplete) {
+    private bool TryTakeEnemyAIAction(Unit enemyUnit, Action onEnemyAIActionComplete)
+    {
         MoveAction.EnemyAIAction moveAIAction = enemyUnit.GetAction<MoveAction>().GetEnemyAIAction();
         ShootAction.EnemyAIAction shootAIAction = enemyUnit.GetAction<ShootAction>().GetEnemyAIAction();
 
         // Try shooting
-        if (enemyUnit.IsVisible() && shootAIAction != null) {
+        if (enemyUnit.IsVisible() && shootAIAction != null)
+        {
             Unit targetShootUnit = LevelGrid.Instance.GetUnit(shootAIAction.actionGridPosition);
-            if (enemyUnit.TrySpendActionPointsToTakeAction(enemyUnit.GetAction<ShootAction>())) {
+            if (enemyUnit.TrySpendActionPointsToTakeAction(enemyUnit.GetAction<ShootAction>()))
+            {
                 // Take the action
                 enemyUnit.GetAction<ShootAction>()
                     .Shoot(targetShootUnit, onEnemyAIActionComplete);
@@ -89,9 +122,11 @@ public class XCOMEnemyAI : MonoBehaviour {
         }
 
         // Try moving
-        if (moveAIAction != null) {
+        if (moveAIAction != null)
+        {
             Vector3 actionPosition = LevelGrid.Instance.GetWorldPosition(moveAIAction.actionGridPosition);
-            if (enemyUnit.TrySpendActionPointsToTakeAction(enemyUnit.GetAction<MoveAction>())) {
+            if (enemyUnit.TrySpendActionPointsToTakeAction(enemyUnit.GetAction<MoveAction>()))
+            {
                 // Take the action
                 enemyUnit.GetAction<MoveAction>()
                     .Move(actionPosition, onEnemyAIActionComplete);
@@ -99,7 +134,7 @@ public class XCOMEnemyAI : MonoBehaviour {
             }
         }
 
-        /*
+        
         Vector3 actionPosition = enemyUnit.GetPosition();
         if (enemyUnit.GetAction<SpinAction>().IsValidActionPosition(actionPosition)) {
             if (enemyUnit.TrySpendActionPointsToTakeAction(enemyUnit.GetAction<SpinAction>())) {
@@ -109,8 +144,9 @@ public class XCOMEnemyAI : MonoBehaviour {
                 return true;
             }
         }
-        */
+        
         return false;
+        
     }
-
+*/
 }

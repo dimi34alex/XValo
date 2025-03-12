@@ -12,7 +12,7 @@ public class TurnSystemUI : MonoBehaviour {
         turnText = transform.Find("TurnText").GetComponent<TextMeshProUGUI>();
 
         transform.Find("EndTurnBtn").GetComponent<Button>().onClick.AddListener(() => {
-            TurnSystem.Instance.NextTurn();
+            TurnSystem.Instance.CmdNextTurn();
         });
     }
 

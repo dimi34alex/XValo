@@ -1,40 +1,55 @@
-using System;
-using System.Collections;
-using System.Collections.Generic;
+using Mirror;
 using UnityEngine;
+using System;
 
-public class TurnSystem : MonoBehaviour {
-
+public class TurnSystem : NetworkBehaviour
+{
     public static TurnSystem Instance { get; private set; }
 
-
     public event EventHandler OnTurnChanged;
+    [SyncVar] private int turnNumber;
 
+    [SerializeField] [SyncVar] private int currentTurnPlayerId = 1; // Начинает первый игрок
 
-    private int turnNumber;
-    private bool isPlayerTurn;
-
-
-    private void Awake() {
+    private void Awake()
+    {
+/*         if (isServer)
+        {
+            currentTurnPlayerId = 1; // Первый ход за первым игроком
+        } */
         Instance = this;
 
         turnNumber = 1;
-        isPlayerTurn = true;
     }
 
-    public int GetTurnNumber() {
+    private void Start()
+    {
+
+    }
+
+    public int GetTurnNumber()
+    {
         return turnNumber;
     }
-
-    public bool IsPlayerTurn() {
-        return isPlayerTurn;
+    public bool IsPlayerTurn(int playerId)
+    {
+        return playerId == currentTurnPlayerId;
     }
 
-    public void NextTurn() {
-        turnNumber++;
-        isPlayerTurn = !isPlayerTurn;
+    [Command(requiresAuthority = false)]
+    public void CmdNextTurn()
+    {
+        if (!isServer) return;
+
+        currentTurnPlayerId = (currentTurnPlayerId == 1) ? 2 : 1; // Переключаем ходы
+
+        RpcOnTurnChanged(currentTurnPlayerId);
+    }
+
+    [ClientRpc]
+    private void RpcOnTurnChanged(int newTurnPlayerId)
+    {
+        Debug.Log($"Теперь ходит игрок {newTurnPlayerId}");
         OnTurnChanged?.Invoke(this, EventArgs.Empty);
     }
-
-
 }

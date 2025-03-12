@@ -26,7 +26,7 @@ public class GridVisualSelectedAction : MonoBehaviour {
     private void UpdateGridVisual() {
         GridVisual.Instance.HideAllGridPositions();
 
-        if (!TurnSystem.Instance.IsPlayerTurn()) return; // Enemy taking a turn, don't show any grid visual
+        //if (!TurnSystem.Instance.IsPlayerTurn()) return; // Enemy taking a turn, don't show any grid visual
         if (UnitActionSystem.Instance.IsBusy()) return; // Action busy, don't show any grid visual
         if (!UnitActionSystem.Instance.HasSelectedUnit()) return; // No selected unit, don't show any grid visual
 

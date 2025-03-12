@@ -39,7 +39,7 @@ public class UnitActionSystem : MonoBehaviour {
     }
 
     private void Instance_OnTurnChanged(object sender, EventArgs e) {
-        if (TurnSystem.Instance.IsPlayerTurn()) {
+        if (TurnSystem.Instance.IsPlayerTurn(selectedUnit.GetOwnedPlayerId())) {
             // Players turn
             Unit firstFriendlyUnit = UnitManager.Instance.GetFriendlyUnitList()[0];
             SetSelectedUnit(firstFriendlyUnit, firstFriendlyUnit.GetAction<MoveAction>());
@@ -48,15 +48,17 @@ public class UnitActionSystem : MonoBehaviour {
 
     private void Update() {
         if (isBusy) return; // Busy with an action
-        if (!TurnSystem.Instance.IsPlayerTurn()) return; // Enemy taking a turn, wait...
+        //if (!TurnSystem.Instance.IsPlayerTurn()) return; // Enemy taking a turn, wait...
 
         // Activate Action with Mouse
         if (Input.GetMouseButtonDown(0) && !UtilsClass.IsPointerOverUI()) {
+            Debug.Log("Activate Action with Mouse");
             Vector3 worldPosition = Mouse3D.GetMouseWorldPosition();
             Vector2Int gridPosition = LevelGrid.Instance.GetGridPosition(worldPosition);
 
             if (LevelGrid.Instance.IsValidGridPosition(gridPosition)) {
                 Unit unit = LevelGrid.Instance.GetUnit(gridPosition);
+                Debug.Log("Is Valid Grid Position");
 
                 switch (selectedUnitAction.GetActionType()) {
                     case ActionType.Move:
@@ -67,11 +69,18 @@ public class UnitActionSystem : MonoBehaviour {
                             }
                         } else {
                             // Clicked on somewhere with no Unit, move action
+                            Debug.Log(selectedUnit.GetAction<MoveAction>().IsValidMovePosition(worldPosition));
                             if (selectedUnit.GetAction<MoveAction>().IsValidMovePosition(worldPosition)) {
                                 // Valid move position, Try to Move
+                                Debug.Log(selectedUnit.TrySpendActionPointsToTakeAction(selectedUnitAction));
+                                
                                 if (selectedUnit.TrySpendActionPointsToTakeAction(selectedUnitAction)) {
                                     // Did have action points to spend, Move
                                     SetBusy();
+                                    Debug.Log("Move");
+                                    Debug.Log("selectedUnit = " + (selectedUnit == null));
+                                    Debug.Log("selectedUnit.GetAction<MoveAction>() = " + selectedUnit.GetAction<MoveAction>());
+                                    Debug.Log("worldPosition = " + (worldPosition == null));
                                     selectedUnit.GetAction<MoveAction>()
                                         .Move(worldPosition, ClearBusy);
                                 }
