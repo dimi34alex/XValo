@@ -1,207 +1,240 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using Mirror;
 using UnityEngine;
 
-public class ShootAction : BaseAction {
+// Класс ShootAction наследует BaseAction и отвечает за механику стрельбы юнита
+public class ShootAction : BaseAction
+{
 
+    // Переопределяем метод, который возвращает тип действия - в данном случае это "Shoot"
     public override ActionType GetActionType() => ActionType.Shoot;
 
-
+    // Событие, которое вызывается при стрельбе (передает информацию о цели и попадании)
     public event EventHandler<OnShootEventArgs> OnShoot;
-    public class OnShootEventArgs : EventArgs {
-        public Unit shotUnit;
-        public bool hit;
+
+    Action actionCom;
+
+    // Класс аргументов события стрельбы
+    public class OnShootEventArgs : EventArgs
+    {
+        public Unit shotUnit; // Юнит, в которого стреляют
+        public bool hit; // Попадание (true - попал, false - промахнулся)
     }
 
-
-    private enum State {
-        Aiming,
-        Shooting,
-        Cooloff,
+    // Перечисление состояний стрельбы
+    private enum State
+    {
+        Aiming,   // Прицеливание
+        Shooting, // Стрельба
+        Cooloff,  // Ожидание после выстрела (перезарядка)
     }
 
+    private int maxShootDistance = 6; // Максимальная дальность стрельбы в клетках
+    private Unit targetUnit; // Цель, в которую стреляет юнит
+    private State state; // Текущее состояние стрельбы
+    private float stateTimer; // Таймер состояния
+    private float maxAccuracy; // Максимальная точность юнита
 
-    private int maxShootDistance = 6;
-    private Unit targetUnit;
-    private State state;
-    private float stateTimer;
-    private float maxAccuracy;
-
-
-    private void Awake() {
-        maxAccuracy = UnityEngine.Random.Range(.8f, 1f);
+    // Метод Awake вызывается при инициализации объекта
+    private void Awake()
+    {
+        maxAccuracy = UnityEngine.Random.Range(.8f, 1f); // Случайное значение точности в диапазоне 80-100%
     }
 
-    private void Update() {
+    // Метод Update вызывается каждый кадр
+    private void Update()
+    {
         if (!isActive) return;
 
-        switch (state) {
-            default:
-            case State.Aiming: // Aim at target
+        switch (state)
+        {
+            case State.Aiming:
                 Vector3 aimDir = (targetUnit.GetPosition() - transform.position).normalized;
-
-                float rotationSpeed = 10f;
-                transform.forward = Vector3.Lerp(transform.forward, aimDir, Time.deltaTime * rotationSpeed);
+                transform.forward = Vector3.Lerp(transform.forward, aimDir, Time.deltaTime * 10f);
 
                 stateTimer -= Time.deltaTime;
-                if (stateTimer <= 0f) {
+                if (stateTimer <= 0f)
+                {
+                    if (isServer)
+                    {
+                        bool hit = UnityEngine.Random.Range(0f, 1f) < GetHitPercent(targetUnit);
+                        int damageAmount = hit ? UnityEngine.Random.Range(30, 60) : 0;
+                        RpcProcessShot(targetUnit, hit, damageAmount);
+                    }
+
                     state = State.Shooting;
                     stateTimer = .5f;
-
-                    // Calc hit or miss
-                    bool hit = UnityEngine.Random.Range(0, 1f) < GetHitPercent(targetUnit);
-
-                    OnShoot?.Invoke(this, new OnShootEventArgs { shotUnit = targetUnit, hit = hit });
-
-                    if (hit) {
-                        // Hit the unit!
-                        int damageAmount = UnityEngine.Random.Range(30, 60);
-                        targetUnit.GetHealthSystem().Damage(damageAmount);
-                    }
                 }
                 break;
-            case State.Shooting: // Shoot target
+
+            case State.Shooting:
                 state = State.Cooloff;
                 stateTimer = .5f;
                 break;
-            case State.Cooloff: // Cool down after firing
+
+            case State.Cooloff:
                 stateTimer -= Time.deltaTime;
-                if (stateTimer <= 0f) {
+                if (stateTimer <= 0f)
+                {
                     ActionComplete();
+                    actionCom.Invoke();
                 }
                 break;
         }
     }
 
-    public void Shoot(Unit targetUnit, Action onActionComplete) {
+
+    // Метод начала стрельбы
+    public void Shoot(Unit targetUnit, Action onActionComplete)
+    {
+        actionCom = onActionComplete;
+        if (!isServer)
+        {
+            CmdShoot(targetUnit);
+            return;
+        }
+
         this.targetUnit = targetUnit;
-
         ActionStarted(onActionComplete);
-
         state = State.Aiming;
         stateTimer = 1f;
     }
 
-    public Unit GetTargetUnit() {
+    // Команда для вызова на сервере
+    [Command]
+    private void CmdShoot(Unit targetUnit)
+    {
+        this.targetUnit = targetUnit;
+        RpcStartAiming(targetUnit);
+    }
+
+    // Уведомляем клиентов о начале стрельбы
+    [ClientRpc]
+    private void RpcStartAiming(Unit targetUnit)
+    {
+        this.targetUnit = targetUnit;
+        state = State.Aiming;
+        stateTimer = 1f;
+    }
+    [ClientRpc]
+    private void RpcProcessShot(Unit targetUnit, bool hit, int damageAmount)
+    {
+        OnShoot?.Invoke(this, new OnShootEventArgs { shotUnit = targetUnit, hit = hit });
+
+        if (hit)
+        {
+            targetUnit.GetHealthSystem().Damage(damageAmount);
+        }
+    }
+
+
+    // Возвращает текущего противника, в которого стреляем
+    public Unit GetTargetUnit()
+    {
         return targetUnit;
     }
 
-    public bool IsValidShootPosition(Vector3 moveWorldPosition) {
+    // Проверяет, можно ли стрелять из данной позиции
+    public bool IsValidShootPosition(Vector3 moveWorldPosition)
+    {
         return IsValidShootPosition(LevelGrid.Instance.GetGridPosition(moveWorldPosition));
     }
 
-    public bool IsValidShootPosition(Vector2Int moveGridPosition) {
+    public bool IsValidShootPosition(Vector2Int moveGridPosition)
+    {
         List<Vector2Int> validShootGridPositionList = GetValidShootGridPositionList();
         return validShootGridPositionList.Contains(moveGridPosition);
     }
 
-    public int GetTargetCountAtPosition(Vector2Int currentGridPosition) {
+    // Возвращает количество целей, доступных для атаки с данной позиции
+    public int GetTargetCountAtPosition(Vector2Int currentGridPosition)
+    {
         return GetValidShootGridPositionList(currentGridPosition).Count;
     }
 
-    public List<Vector2Int> GetValidShootGridPositionList() {
+    // Возвращает список всех возможных позиций для стрельбы
+    public List<Vector2Int> GetValidShootGridPositionList()
+    {
         Vector2Int currentGridPosition = unit.GetGridPosition();
         return GetValidShootGridPositionList(currentGridPosition);
     }
 
-    public List<Vector2Int> GetValidShootGridPositionList(Vector2Int currentGridPosition) {
+    // Рассчитывает возможные позиции для стрельбы вокруг юнита
+    public List<Vector2Int> GetValidShootGridPositionList(Vector2Int currentGridPosition)
+    {
         List<Vector2Int> validShootGridPositionList = new List<Vector2Int>();
 
-        for (int x = -maxShootDistance; x <= maxShootDistance; x++) {
-            for (int y = -maxShootDistance; y <= maxShootDistance; y++) {
+        for (int x = -maxShootDistance; x <= maxShootDistance; x++)
+        {
+            for (int y = -maxShootDistance; y <= maxShootDistance; y++)
+            {
                 Vector2Int shootGridPosition = currentGridPosition + new Vector2Int(x, y);
                 Vector2Int shootVector = shootGridPosition - currentGridPosition;
                 int shootDistance = Mathf.Abs(shootVector.x) + Mathf.Abs(shootVector.y);
-                if (shootDistance <= maxShootDistance) {
-                    // Within valid shoot distance
-                    if (LevelGrid.Instance.IsValidGridPosition(shootGridPosition)) {
-                        // Valid grid position (not off bounds)
-                        // Is there an enemy on this position?
+                if (shootDistance <= maxShootDistance)
+                { // Проверяем, в пределах ли дистанции
+                    if (LevelGrid.Instance.IsValidGridPosition(shootGridPosition))
+                    { // Проверяем, что позиция не выходит за границы
                         Unit shootUnit = LevelGrid.Instance.GetUnit(shootGridPosition);
-                        if (shootUnit != null && shootUnit != unit && shootUnit.IsEnemy() != unit.IsEnemy() && shootUnit.IsVisible()) {
-                            // There is a unit, is not self, is opposite enemy, is visible
+                        if (shootUnit != null && shootUnit != unit && shootUnit.IsEnemy() != unit.IsEnemy() && shootUnit.IsVisible())
+                        {
+                            // Если есть вражеский юнит на этой позиции, добавляем в список
                             validShootGridPositionList.Add(shootGridPosition);
                         }
                     }
                 }
             }
         }
-
         return validShootGridPositionList;
     }
 
-    public int GetMaxShootDistance() {
+    public int GetMaxShootDistance()
+    {
         return maxShootDistance;
     }
 
-    private int GetShootDistance(Vector2Int shootGridPosition) {
+    private int GetShootDistance(Vector2Int shootGridPosition)
+    {
         Vector2Int currentGridPosition = unit.GetGridPosition();
         Vector2Int shootVector = shootGridPosition - currentGridPosition;
-        int shootDistance = Mathf.Abs(shootVector.x) + Mathf.Abs(shootVector.y);
-        return shootDistance;
+        return Mathf.Abs(shootVector.x) + Mathf.Abs(shootVector.y);
     }
 
-    public bool IsWithinShootingDistance(Vector2Int shootGridPosition) {
+    public bool IsWithinShootingDistance(Vector2Int shootGridPosition)
+    {
         return GetShootDistance(shootGridPosition) <= maxShootDistance;
     }
 
-
-    public float GetHitPercent(Unit shootUnit) {
-        if (IsWithinShootingDistance(shootUnit.GetGridPosition())) {
-            // Within shoot range
+    // Определяет вероятность попадания по цели
+    public float GetHitPercent(Unit shootUnit)
+    {
+        if (IsWithinShootingDistance(shootUnit.GetGridPosition()))
+        {
             float hitPercent = maxAccuracy;
 
             int shootDistance = GetShootDistance(shootUnit.GetGridPosition());
             int fullAccuracyShootDistance = 3;
             int remainingShootDistance = Mathf.Max(0, shootDistance - fullAccuracyShootDistance);
-            hitPercent -= .05f * remainingShootDistance;
+            hitPercent -= .05f * remainingShootDistance; // Чем дальше, тем меньше шанс попасть
 
-            switch (shootUnit.GetCoverType()) {
+            switch (shootUnit.GetCoverType())
+            {
                 case CoverType.Full:
-                    hitPercent -= .3f;
+                    hitPercent -= .3f; // Полное укрытие снижает точность на 30%
                     break;
                 case CoverType.Half:
-                    hitPercent -= .1f;
+                    hitPercent -= .1f; // Полу-укрытие снижает точность на 10%
                     break;
             }
 
             return hitPercent;
-
-        } else {
-            // Not within shoot range
-            return 0f;
         }
-    }
-
-    public EnemyAIAction GetEnemyAIAction() {
-        List<Vector2Int> validShootGridPositionList = GetValidShootGridPositionList();
-
-        List<EnemyAIAction> enemyAIActionList = new List<EnemyAIAction>();
-
-        foreach (Vector2Int gridPosition in validShootGridPositionList) {
-            // Calculate AI Action Value for shooting this position
-            Unit shootUnit = LevelGrid.Instance.GetUnit(gridPosition);
-            int actionValue = 100 - shootUnit.GetHealthSystem().GetHealth();
-            enemyAIActionList.Add(new EnemyAIAction {
-                actionGridPosition = gridPosition,
-                actionValue = actionValue,
-            });
+        else
+        {
+            return 0f; // Если вне зоны атаки, шанс попасть 0%
         }
-
-        if (enemyAIActionList.Count > 0) {
-            // Sort by actionValue
-            enemyAIActionList.Sort((EnemyAIAction a, EnemyAIAction b) => b.actionValue - a.actionValue);
-            return enemyAIActionList[0];
-        } else {
-            // Cannot shoot anywhere
-            return null;
-        }
-    }
-
-    public class EnemyAIAction {
-        public Vector2Int actionGridPosition;
-        public int actionValue;
     }
 
 }

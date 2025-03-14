@@ -13,6 +13,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using Mirror;
 using UnityEngine;
 
 public class HealthSystem {
@@ -24,7 +25,7 @@ public class HealthSystem {
     public event EventHandler OnDead;
 
     private int healthMax;
-    private int health;
+    [SyncVar] private int health;
 
     public HealthSystem(int healthMax) {
         this.healthMax = healthMax;

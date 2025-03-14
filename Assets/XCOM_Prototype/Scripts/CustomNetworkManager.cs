@@ -4,9 +4,14 @@ using System.Collections.Generic;
 
 public class CustomNetworkManager : NetworkManager
 {
+    public static CustomNetworkManager Instance { get; private set; }
     private int nextPlayerId = 1;
     private Dictionary<int, NetworkConnectionToClient> connectedPlayers = new Dictionary<int, NetworkConnectionToClient>();
 
+    private void Awake()
+    {
+        Instance = this;
+    }
     public override void OnServerAddPlayer(NetworkConnectionToClient conn)
     {
         base.OnServerAddPlayer(conn);
@@ -60,5 +65,4 @@ public class CustomNetworkManager : NetworkManager
             Debug.Log($"[SERVER] Назначен authority для юнита {unitObj.name} игроку {playerId} (connId: {conn.connectionId})");
         }
     }
-
 }

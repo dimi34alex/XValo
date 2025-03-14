@@ -52,7 +52,7 @@ public class MoveAction : BaseAction
             {
                 ActionComplete();
                 actionCom.Invoke();
-                isActive = false; // Остановка Update()
+                //isActive = false; // Остановка Update()
                 return;
             }
 
@@ -60,8 +60,6 @@ public class MoveAction : BaseAction
         }
 
     }
-
-
 
     // Клиент отправляет команду на сервер для начала перемещения
     public void Move(Vector3 targetPosition, Action onActionComplete)
@@ -72,6 +70,8 @@ public class MoveAction : BaseAction
         if (!isOwned)
         {
             Debug.LogError("[MoveAction] Этот клиент не владеет юнитом!");
+            ActionComplete();
+            actionCom.Invoke();
             return;
         }
 
@@ -94,6 +94,8 @@ public class MoveAction : BaseAction
         if (foundPath == null || foundPath.Count == 0)
         {
             Debug.LogError("[SERVER] Путь не найден!");
+            ActionComplete();
+            actionCom.Invoke();
             return;
         }
 
@@ -128,6 +130,7 @@ public class MoveAction : BaseAction
         {
             Debug.LogError("[ExecuteMove] Ошибка! Путь не найден.");
             ActionComplete();
+            actionCom.Invoke();
             return;
         }
 

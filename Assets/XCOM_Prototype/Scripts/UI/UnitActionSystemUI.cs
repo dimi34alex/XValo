@@ -125,7 +125,7 @@ public class UnitActionSystemUI : MonoBehaviour
         if (selectedUnit == null) return;
 
         int playerId = selectedUnit.GetOwnedPlayerId(); // Получаем playerId юнита
-        enemyTurnVisualGameObject.SetActive(!TurnSystem.Instance.IsPlayerTurn(playerId));
+        //enemyTurnVisualGameObject.SetActive(!TurnSystem.Instance.IsPlayerTurn(playerId));
 
     }
 
