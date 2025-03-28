@@ -42,6 +42,7 @@ public class CameraManager : MonoBehaviour {
 
     private void ShootAction_OnActionComplete(object sender, System.EventArgs e) {
         actionCameraTransform.gameObject.SetActive(false);
+        Debug.Log("Вызвался метод ShootAction_OnActionComplete");
     }
 
     private void ShootAction_OnActionStarted(object sender, System.EventArgs e) {

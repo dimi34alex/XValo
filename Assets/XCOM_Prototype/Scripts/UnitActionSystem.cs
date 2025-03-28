@@ -77,10 +77,10 @@ public class UnitActionSystem : MonoBehaviour {
                                 if (selectedUnit.TrySpendActionPointsToTakeAction(selectedUnitAction)) {
                                     // Did have action points to spend, Move
                                     SetBusy();
-                                    Debug.Log("Move");
+                                    /* Debug.Log("Move");
                                     Debug.Log("selectedUnit = " + (selectedUnit == null));
                                     Debug.Log("selectedUnit.GetAction<MoveAction>() = " + selectedUnit.GetAction<MoveAction>());
-                                    Debug.Log("worldPosition = " + (worldPosition == null));
+                                    Debug.Log("worldPosition = " + (worldPosition == null)); */
                                     selectedUnit.GetAction<MoveAction>()
                                         .Move(worldPosition, ClearBusy);
                                 }
@@ -165,7 +165,7 @@ public class UnitActionSystem : MonoBehaviour {
         OnBusyChanged?.Invoke(this, isBusy);
     }
 
-    private void ClearBusy() {
+    public void ClearBusy(object sender, EventArgs e) {
         isBusy = false;
         OnBusyChanged?.Invoke(this, isBusy);
     }

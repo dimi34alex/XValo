@@ -1,12 +1,40 @@
 using Mirror;
 using UnityEngine;
 using System.Collections.Generic;
+using Calroot.MirrorEvents;
 
 public class CustomNetworkManager : NetworkManager
 {
     public static CustomNetworkManager Instance { get; private set; }
     private int nextPlayerId = 1;
     private Dictionary<int, NetworkConnectionToClient> connectedPlayers = new Dictionary<int, NetworkConnectionToClient>();
+
+    public override void OnStartServer()
+    {
+        base.OnStartServer();
+        EventManager.Server_Register();
+    }
+    // Отмените регистрацию сервера для обработки сетевых событий в OnStopServer()
+    public override void OnStopServer()
+    {
+        base.OnStopServer();
+        EventManager.Server_Unregister();
+    }
+
+    // Зарегистрируйте клиента для обработки сетевых событий в OnStartClient()
+    public override void OnStartClient()
+    {
+        base.OnStartClient();
+        EventManager.Client_Register();
+    }
+
+    // Отмените регистрацию клиента для обработки сетевых событий в OnStopClient()
+    public override void OnStopClient()
+    {
+        base.OnStopClient();
+        EventManager.Client_Unregister();
+    }
+
 
     private void Awake()
     {

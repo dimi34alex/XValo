@@ -52,7 +52,7 @@ public class GrenadeAction : BaseAction {
         }
     }
 
-    public void ThrowGrenade(Vector3 grenadeTargetPosition, Action onActionComplete) {
+    public void ThrowGrenade(Vector3 grenadeTargetPosition, EventHandler onActionComplete) {
         ActionStarted(onActionComplete);
 
         grenadeStartPosition = unit.GetPosition();

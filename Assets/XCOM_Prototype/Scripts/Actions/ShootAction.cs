@@ -14,7 +14,7 @@ public class ShootAction : BaseAction
     // Событие, которое вызывается при стрельбе (передает информацию о цели и попадании)
     public event EventHandler<OnShootEventArgs> OnShoot;
 
-    Action actionCom;
+    EventHandler actionCom;
 
     // Класс аргументов события стрельбы
     public class OnShootEventArgs : EventArgs
@@ -43,51 +43,8 @@ public class ShootAction : BaseAction
         maxAccuracy = UnityEngine.Random.Range(.8f, 1f); // Случайное значение точности в диапазоне 80-100%
     }
 
-    // Метод Update вызывается каждый кадр
-    private void Update()
-    {
-        if (!isActive) return;
-
-        switch (state)
-        {
-            case State.Aiming:
-                Vector3 aimDir = (targetUnit.GetPosition() - transform.position).normalized;
-                transform.forward = Vector3.Lerp(transform.forward, aimDir, Time.deltaTime * 10f);
-
-                stateTimer -= Time.deltaTime;
-                if (stateTimer <= 0f)
-                {
-                    if (isServer)
-                    {
-                        bool hit = UnityEngine.Random.Range(0f, 1f) < GetHitPercent(targetUnit);
-                        int damageAmount = hit ? UnityEngine.Random.Range(30, 60) : 0;
-                        RpcProcessShot(targetUnit, hit, damageAmount);
-                    }
-
-                    state = State.Shooting;
-                    stateTimer = .5f;
-                }
-                break;
-
-            case State.Shooting:
-                state = State.Cooloff;
-                stateTimer = .5f;
-                break;
-
-            case State.Cooloff:
-                stateTimer -= Time.deltaTime;
-                if (stateTimer <= 0f)
-                {
-                    ActionComplete();
-                    actionCom.Invoke();
-                }
-                break;
-        }
-    }
-
-
     // Метод начала стрельбы
-    public void Shoot(Unit targetUnit, Action onActionComplete)
+    public void Shoot(Unit targetUnit, EventHandler onActionComplete)
     {
         actionCom = onActionComplete;
         if (!isServer)
@@ -98,9 +55,9 @@ public class ShootAction : BaseAction
 
         this.targetUnit = targetUnit;
         ActionStarted(onActionComplete);
-        state = State.Aiming;
-        stateTimer = 1f;
+        StartCoroutine(ShootSequence());
     }
+
 
     // Команда для вызова на сервере
     [Command]
@@ -115,8 +72,7 @@ public class ShootAction : BaseAction
     private void RpcStartAiming(Unit targetUnit)
     {
         this.targetUnit = targetUnit;
-        state = State.Aiming;
-        stateTimer = 1f;
+        ActionStarted(actionCom);
     }
     [ClientRpc]
     private void RpcProcessShot(Unit targetUnit, bool hit, int damageAmount)
@@ -127,6 +83,36 @@ public class ShootAction : BaseAction
         {
             targetUnit.GetHealthSystem().Damage(damageAmount);
         }
+    }
+
+    private IEnumerator ShootSequence()
+    {
+        state = State.Aiming;
+
+        Vector3 aimDir = (targetUnit.GetPosition() - transform.position).normalized;
+        float rotationSpeed = 10f;
+        float timeElapsed = 0f;
+
+        while (timeElapsed < 1f)
+        {
+            transform.forward = Vector3.Lerp(transform.forward, aimDir, Time.deltaTime * rotationSpeed);
+            timeElapsed += Time.deltaTime;
+            yield return null;
+        }
+
+        if (isServer)
+        {
+            bool hit = UnityEngine.Random.Range(0f, 1f) < GetHitPercent(targetUnit);
+            int damageAmount = hit ? UnityEngine.Random.Range(30, 60) : 0;
+            RpcProcessShot(targetUnit, hit, damageAmount);
+        }
+
+        state = State.Shooting;
+        yield return new WaitForSeconds(0.5f);
+        state = State.Cooloff;
+        yield return new WaitForSeconds(0.5f);
+
+        ActionComplete();
     }
 
 

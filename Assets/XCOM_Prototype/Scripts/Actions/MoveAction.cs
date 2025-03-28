@@ -11,114 +11,50 @@ public class MoveAction : BaseAction
     private int maxMoveDistance = 4;
     private SyncList<Vector3> pathPositionList = new SyncList<Vector3>();
     [SyncVar] private int currentPositionIndex;
-
-    Action actionCom;
-
     private void Awake()
     {
         currentPositionIndex = 0;
     }
 
-    private void Update()
+    // 🚀 Клиент отправляет команду на сервер для начала перемещения
+    public void Move(Vector3 targetPosition, EventHandler onActionComplete)
     {
-        if (!isActive) return;
-        if (pathPositionList == null || pathPositionList.Count == 0)
-        {
-            Debug.LogError("[MoveAction] Ошибка: Путь пуст!");
-            ActionComplete();
-            return;
-        }
-
-        if (currentPositionIndex >= pathPositionList.Count) // Проверяем перед использованием индекса
-        {
-            Debug.LogError("[MoveAction] Ошибка: Индекс вне диапазона!");
-            ActionComplete();
-            return;
-        }
-
-        Vector3 targetPosition = pathPositionList[currentPositionIndex];
-        Vector3 moveDir = (targetPosition - transform.position).normalized;
-
-        float rotationSpeed = 10f;
-        transform.forward = Vector3.Lerp(transform.forward, moveDir, Time.deltaTime * rotationSpeed);
-
-        float moveSpeed = 4f;
-        transform.position += moveDir * moveSpeed * Time.deltaTime;
-
-        float reachedDistance = 0.1f;
-        if (Vector3.Distance(transform.position, targetPosition) < reachedDistance)
-        {
-            if (currentPositionIndex + 1 >= pathPositionList.Count) // Если следующий индекс выйдет за пределы
-            {
-                ActionComplete();
-                actionCom.Invoke();
-                //isActive = false; // Остановка Update()
-                return;
-            }
-
-            currentPositionIndex++;
-        }
-
-    }
-
-    // Клиент отправляет команду на сервер для начала перемещения
-    public void Move(Vector3 targetPosition, Action onActionComplete)
-    {
-        actionCom = onActionComplete;
         Debug.Log($"[MoveAction] Move() вызван: {targetPosition}");
 
         if (!isOwned)
         {
             Debug.LogError("[MoveAction] Этот клиент не владеет юнитом!");
             ActionComplete();
-            actionCom.Invoke();
             return;
         }
 
         if (!isServer)
         {
+            ActionStarted(onActionComplete);
+            Debug.Log("[CLIENT] OnActionComplete == null: " + (onActionComplete == null));
             CmdMove(targetPosition);
             return;
         }
-
+        Debug.Log("[SERVER] OnActionComplete == null: " + (onActionComplete == null)); 
+        ActionStarted(onActionComplete);
         ExecuteMove(targetPosition);
     }
-
 
     [Command]
     private void CmdMove(Vector3 targetPosition)
     {
-        Debug.Log($"[SERVER] CmdMove() вызван: {targetPosition}");
-
-        List<Vector3> foundPath = LevelPathfinding.Instance.FindPath(unit.GetPosition(), targetPosition, out int pathLength);
-        if (foundPath == null || foundPath.Count == 0)
-        {
-            Debug.LogError("[SERVER] Путь не найден!");
-            ActionComplete();
-            actionCom.Invoke();
-            return;
-        }
-
-        pathPositionList.Clear();
-        foreach (var pos in foundPath)
-        {
-            pathPositionList.Add(pos);
-        }
-
-        currentPositionIndex = 0;
-        RpcMove();
+        ExecuteMove(targetPosition);
+        RpcStartMove();
     }
-
 
     [ClientRpc]
-    private void RpcMove()
+    private void RpcStartMove()
     {
         if (isServer) return; // Сервер уже выполняет перемещение
-        currentPositionIndex = 0;
-        isActive = true;
+        StartCoroutine(MoveAlongPath());
     }
 
-
+    [Server]
     private void ExecuteMove(Vector3 targetPosition)
     {
         Debug.Log($"[ExecuteMove] Начинаем поиск пути к {targetPosition}");
@@ -130,20 +66,65 @@ public class MoveAction : BaseAction
         {
             Debug.LogError("[ExecuteMove] Ошибка! Путь не найден.");
             ActionComplete();
-            actionCom.Invoke();
             return;
         }
 
         // Очистить старый путь и обновить SyncList<Vector3>
-        pathPositionList.Clear();
+        pathPositionList.Reset();
         foreach (var pos in foundPath)
         {
             pathPositionList.Add(pos);
+            Debug.Log("pos = " + pos);
         }
 
-        // Сброс индекса и активация движения
+        // Сброс индекса и запуск корутины
         currentPositionIndex = 0;
-        isActive = true;
+        StartCoroutine(MoveAlongPath());
+    }
+
+    private IEnumerator MoveAlongPath()
+    {
+        yield return new WaitForSeconds(1);
+        Debug.Log("Я корутина и я работаю ля-ля");
+        Debug.Log(pathPositionList + " || " + pathPositionList.Count);
+        if (pathPositionList == null || pathPositionList.Count == 0)
+        {
+            Debug.LogError("[MoveAlongPath] Ошибка: путь пуст!");
+            ActionComplete();
+            yield break;
+        }
+
+        while (currentPositionIndex < pathPositionList.Count)
+        {
+            Vector3 targetPosition = pathPositionList[currentPositionIndex];
+            Vector3 moveDir = (targetPosition - transform.position).normalized;
+
+            float rotationSpeed = 10f;
+            float moveSpeed = 4f;
+            float reachedDistance = 0.1f;
+
+            while ((transform.position - targetPosition).sqrMagnitude > reachedDistance * reachedDistance)
+            {
+                transform.position += moveDir * moveSpeed * Time.deltaTime;
+
+                transform.rotation = Quaternion.Slerp(
+                    transform.rotation,
+                    Quaternion.LookRotation(moveDir),
+                    Time.deltaTime * rotationSpeed
+                );
+
+                yield return null;
+            }
+
+            currentPositionIndex++;
+
+            if (currentPositionIndex >= pathPositionList.Count)
+            {
+                Debug.Log("Перемещение должно закончиться");
+                ActionComplete();
+                yield break;
+            }
+        }
     }
 
 

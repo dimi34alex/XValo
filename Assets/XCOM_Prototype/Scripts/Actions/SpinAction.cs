@@ -25,7 +25,7 @@ public class SpinAction : BaseAction {
         }
     }
 
-    public void Spin(Action onActionComplete) {
+    public void Spin(EventHandler onActionComplete) {
         ActionStarted(onActionComplete);
 
         timer = 1f;

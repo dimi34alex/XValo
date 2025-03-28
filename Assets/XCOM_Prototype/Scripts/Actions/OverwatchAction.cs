@@ -60,7 +60,7 @@ public class OverwatchAction : BaseAction {
         ActionComplete();
     }
 
-    public void Overwatch(Action onActionComplete) {
+    public void Overwatch(EventHandler onActionComplete) {
         ActionStarted(onActionComplete);
 
         passiveActive = true;
